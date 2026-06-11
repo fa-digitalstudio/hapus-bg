@@ -105,7 +105,7 @@
     </div>
   </div>
 
-  <!-- Navbar (TANPA kolom kode) -->
+  <!-- Navbar -->
   <nav class="glass sticky top-0 z-30 shadow-sm">
     <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
       <button id="openSidebar" class="text-dark text-xl hover:text-primary transition-colors"><i class="fa fa-bars"></i></button>
@@ -187,17 +187,17 @@
       </section>
     </section>
 
-    <!-- Halaman Beli Kredit (DITAMBAH kolom masukkan kode di sini) -->
+    <!-- Halaman Beli Kredit -->
     <section id="pageKredit" class="page-content max-w-3xl mx-auto">
       <h2 class="text-3xl font-bold mb-6 text-center">Beli Kredit Tambahan</h2>
       <div class="bg-white p-8 rounded-2xl shadow-sm border border-lightBorder">
         
-        <!-- ✅ BAGIAN MASUKKAN KODE KREDIT -->
+        <!-- Bagian Masukkan Kode Kredit -->
         <div class="mb-8 p-5 bg-blue-50 rounded-xl border border-blue-100">
           <h3 class="text-lg font-semibold mb-3 text-primary flex items-center">
             <i class="fa fa-key mr-2"></i> Punya Kode Kredit?
           </h3>
-          <p class="text-sm text-gray-600 mb-3">Masukkan kode yang Anda terima dari admin untuk menambah kredit secara instan</p>
+          <p class="text-sm text-gray-600 mb-3">Masukkan kode yang Anda terima dari admin untuk menambah atau mengurangi kredit secara instan</p>
           <div class="flex gap-2">
             <input 
               type="text" 
@@ -332,18 +332,15 @@
     const WA_ADMIN = "6285825444030"; // Ganti nomor WA Anda
 
     // ==============================================
-    // SISTEM KREDIT (DIPERBAIKI - TIDAK KEMBALI KE 2 SETELAH HABIS)
+    // SISTEM KREDIT
     // ==============================================
-    // Cek apakah data kredit sudah ada di penyimpanan lokal
     let kredit;
     const simpananKredit = localStorage.getItem('hapusbg_kredit');
     
-    // Hanya berikan 2 kredit jika BELUM PERNAH ada data tersimpan
     if (simpananKredit === null) {
       kredit = 2;
       localStorage.setItem('hapusbg_kredit', kredit);
     } else {
-      // Jika sudah ada, gunakan nilai yang tersimpan (bahkan jika 0)
       kredit = parseInt(simpananKredit) || 0;
     }
 
@@ -431,15 +428,15 @@
     closeAbout.addEventListener('click', closeAboutModal);
 
     // ==============================================
-    // SISTEM KODE PENGGUNA
+    // SISTEM KODE PENGGUNA (DIPERBARUI)
     // ==============================================
     function prosesKodePengguna() {
       const kode = document.getElementById('kodeInput').value.trim();
-      validasiDanTambahKredit(kode);
+      validasiDanProsesKode(kode);
       document.getElementById('kodeInput').value = '';
     }
 
-    function validasiDanTambahKredit(kode) {
+    function validasiDanProsesKode(kode) {
       if (!kode) return alert('❌ Masukkan kode terlebih dahulu!');
 
       const kodeTerpakai = JSON.parse(localStorage.getItem('kode_terpakai') || '[]');
@@ -447,20 +444,47 @@
 
       try {
         const data = atob(kode).split('|');
-        if (data[0] !== 'TAMBAH_KREDIT' || data.length !== 3) throw new Error('Format salah');
+        
+        if (data[0] === 'TAMBAH_KREDIT' && data.length === 3) {
+          // Kode tambah kredit
+          const jumlah = parseInt(data[1]);
+          const kadaluarsa = parseInt(data[2]);
 
-        const jumlah = parseInt(data[1]);
-        const kadaluarsa = parseInt(data[2]);
+          if (Date.now() > kadaluarsa) return alert('❌ Kode sudah kadaluarsa!');
 
-        if (Date.now() > kadaluarsa) return alert('❌ Kode sudah kadaluarsa!');
+          kredit += jumlah;
+          updateKredit();
 
-        kredit += jumlah;
-        updateKredit();
+          kodeTerpakai.push(kode);
+          localStorage.setItem('kode_terpakai', JSON.stringify(kodeTerpakai));
 
-        kodeTerpakai.push(kode);
-        localStorage.setItem('kode_terpakai', JSON.stringify(kodeTerpakai));
+          alert(`✅ Berhasil! ${jumlah} kredit ditambahkan.\nTotal: ${kredit} kredit`);
+        }
+        else if (data[0] === 'KURANGI_KREDIT' && data.length === 3) {
+          // Kode kurangi/hapus kredit
+          const jumlah = data[1] === 'ALL' ? 'ALL' : parseInt(data[1]);
+          const kadaluarsa = parseInt(data[2]);
 
-        alert(`✅ Berhasil! ${jumlah} kredit ditambahkan.\nTotal: ${kredit} kredit`);
+          if (Date.now() > kadaluarsa) return alert('❌ Kode sudah kadaluarsa!');
+
+          if (jumlah === 'ALL') {
+            kredit = 0;
+            alert(`⚠️ Semua kredit telah dihapus!\nTotal sekarang: 0 kredit`);
+          } else {
+            if (kredit < jumlah) {
+              return alert(`❌ Kredit tidak cukup! Saldo saat ini: ${kredit} kredit`);
+            }
+            kredit -= jumlah;
+            alert(`⚠️ Berhasil dikurangi ${jumlah} kredit.\nTotal sekarang: ${kredit} kredit`);
+          }
+
+          updateKredit();
+          kodeTerpakai.push(kode);
+          localStorage.setItem('kode_terpakai', JSON.stringify(kodeTerpakai));
+        }
+        else {
+          throw new Error('Format tidak dikenali');
+        }
 
       } catch (e) {
         alert('❌ Kode tidak valid! Pastikan disalin dengan benar.');
