@@ -332,9 +332,21 @@
     const WA_ADMIN = "6285825444030"; // Ganti nomor WA Anda
 
     // ==============================================
-    // SISTEM KREDIT
+    // SISTEM KREDIT (DIPERBAIKI - TIDAK KEMBALI KE 2 SETELAH HABIS)
     // ==============================================
-    let kredit = parseInt(localStorage.getItem('hapusbg_kredit')) || 2;
+    // Cek apakah data kredit sudah ada di penyimpanan lokal
+    let kredit;
+    const simpananKredit = localStorage.getItem('hapusbg_kredit');
+    
+    // Hanya berikan 2 kredit jika BELUM PERNAH ada data tersimpan
+    if (simpananKredit === null) {
+      kredit = 2;
+      localStorage.setItem('hapusbg_kredit', kredit);
+    } else {
+      // Jika sudah ada, gunakan nilai yang tersimpan (bahkan jika 0)
+      kredit = parseInt(simpananKredit) || 0;
+    }
+
     const infoKredit = document.getElementById('infoKredit');
 
     function updateKredit() {
