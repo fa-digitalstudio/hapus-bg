@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hapus Latar Belakang | Sistem Kredit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#00B42A',
+            dark: '#1D2129',
+            light: '#F2F3F5',
+            grayText: '#4E5969',
+            lightBorder: '#E5E6EB'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .drop-zone {border: 2px dashed #C9CDD4; transition: all 0.3s ease;}
+      .drop-zone.dragover {border-color: #165DFF; background-color: #ECF4FF; transform: scale(1.01);}
+      .bg-checker {background-image: linear-gradient(45deg, #E5E6EB 25%, transparent 25%), linear-gradient(-45deg, #E5E6EB 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #E5E6EB 75%), linear-gradient(-45deg, transparent 75%, #E5E6EB 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0;}
+      .glass {background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);}
+      .loading-spinner {border: 3px solid #E5E6EB; border-top: 3px solid #165DFF; border-radius: 50%; width: 42px; height: 42px; animation: spin 1s linear infinite;}
+      @keyframes spin {0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}
+      .btn-hover {transition: all 0.2s ease;}
+      .btn-hover:hover {transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22, 93, 255, 0.2);}
+      .sidebar {transform: translateX(-100%); transition: transform 0.3s ease-in-out;}
+      .sidebar.open {transform: translateX(0);}
+      .overlay {background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);}
+      .modal {opacity: 0; visibility: hidden; transform: scale(0.9); transition: all 0.3s ease;}
+      .modal.open {opacity: 1; visibility: visible; transform: scale(1);}
+      .page-content {display: none;}
+      .page-content.active {display: block;}
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-slate-50 to-blue-50 text-dark min-h-screen font-sans overflow-x-hidden">
+  <!-- Overlay -->
+  <div id="overlay" class="overlay fixed inset-0 z-40 hidden"></div>
+
+  <!-- Menu Samping -->
+  <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-72 bg-white shadow-xl z-50 p-6">
+    <div class="flex justify-between items-center mb-8">
+      <div class="flex items-center gap-2">
+        <i class="fa fa-magic text-primary text-2xl"></i>
+        <span class="font-bold text-xl">HapusBG</span>
+      </div>
+      <button id="closeSidebar" class="text-gray-500 hover:text-dark text-xl"><i class="fa fa-times"></i></button>
+    </div>
+    <nav class="flex flex-col gap-1">
+      <button id="menuBeranda" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-primary transition-colors text-left w-full">
+        <i class="fa fa-home w-5"></i> Beranda
+      </button>
+      <button id="menuKredit" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-primary transition-colors text-left w-full">
+        <i class="fa fa-credit-card w-5"></i> Beli Kredit
+      </button>
+      <button id="menuCaraKerja" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-primary transition-colors text-left w-full">
+        <i class="fa fa-info-circle w-5"></i> Cara Kerja
+      </button>
+      <button id="menuTentang" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-primary transition-colors text-left w-full">
+        <i class="fa fa-question-circle w-5"></i> Tentang
+      </button>
+      <button id="menuKebijakan" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 hover:text-primary transition-colors text-left w-full">
+        <i class="fa fa-shield w-5"></i> Kebijakan
+      </button>
+    </nav>
+  </div>
+
+  <!-- Pop-up Tentang -->
+  <div id="aboutModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div class="bg-gradient-to-r from-primary to-blue-600 p-6 text-white">
+        <div class="flex justify-between items-center">
+          <h3 class="text-2xl font-bold">Tentang HapusBG</h3>
+          <button id="closeAbout" class="text-white/80 hover:text-white text-xl"><i class="fa fa-times"></i></button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="flex justify-center mb-6">
+          <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center">
+            <i class="fa fa-magic text-primary text-4xl"></i>
+          </div>
+        </div>
+        <p class="text-gray-700 text-center mb-4 leading-relaxed">
+          <strong>HapusBG</strong> adalah alat hapus latar belakang gambar otomatis. Pengguna baru mendapatkan 2 kredit gratis.
+        </p>
+        <p class="text-gray-600 text-sm text-center mb-6">
+          Setiap proses = 1 kredit. Beli kredit tambahan jika habis.
+        </p>
+        <div class="text-center text-xs text-gray-500">
+          <p>&copy; 2026 HapusBG</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navbar (TANPA kolom kode) -->
+  <nav class="glass sticky top-0 z-30 shadow-sm">
+    <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+      <button id="openSidebar" class="text-dark text-xl hover:text-primary transition-colors"><i class="fa fa-bars"></i></button>
+      
+      <div class="flex items-center gap-2">
+        <i class="fa fa-magic text-primary text-2xl"></i>
+        <span class="font-bold text-xl sm:text-2xl">HapusBG</span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="infoKredit" class="bg-blue-100 text-primary px-3 py-1 rounded-full text-sm font-medium">Kredit: 0</span>
+        <div class="hidden md:flex gap-4 items-center">
+          <button id="navBeranda" class="hover:text-primary transition-colors font-medium">Beranda</button>
+          <button id="navKredit" class="hover:text-primary transition-colors font-medium">Beli Kredit</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 sm:px-6 py-8">
+    <!-- Halaman Beranda -->
+    <section id="pageBeranda" class="page-content active">
+      <div class="text-center mb-8">
+        <h1 class="text-[clamp(1.75rem,4vw,3rem)] font-bold mb-4">Hapus Latar Belakang Otomatis</h1>
+        <p class="text-grayText max-w-2xl mx-auto">Pengguna baru dapat 2 kredit gratis. Setiap proses menggunakan 1 kredit.</p>
+      </div>
+
+      <div class="max-w-3xl mx-auto">
+        <div id="dropZone" class="drop-zone bg-white rounded-2xl p-8 sm:p-12 cursor-pointer hover:border-primary shadow-md hover:shadow-lg transition-shadow">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" />
+          
+          <div id="uploadContent" class="flex flex-col items-center gap-5">
+            <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center">
+              <i class="fa fa-cloud-upload text-4xl text-primary"></i>
+            </div>
+            <h3 class="text-xl font-semibold">Unggah Gambar</h3>
+            <p class="text-grayText text-center">Seret & lepas atau klik untuk memilih</p>
+            <div class="text-xs text-grayText">Maks 12MB | JPG/PNG/WEBP</div>
+          </div>
+
+          <div id="loadingContent" class="hidden flex flex-col items-center gap-5">
+            <div class="loading-spinner"></div>
+            <h3 class="text-xl font-semibold text-primary">Memproses...</h3>
+          </div>
+
+          <div id="kreditHabis" class="hidden flex flex-col items-center gap-4 text-center p-4">
+            <i class="fa fa-exclamation-triangle text-4xl text-orange-500"></i>
+            <h3 class="text-xl font-semibold">Kredit Anda Habis</h3>
+            <p class="text-grayText">Silakan beli paket kredit untuk melanjutkan</p>
+            <button onclick="gantiHalaman(pageKredit)" class="bg-primary text-white px-6 py-2 rounded-lg btn-hover">Beli Kredit Sekarang</button>
+          </div>
+        </div>
+
+        <div id="errorBox" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm"></div>
+      </div>
+
+      <section id="resultSection" class="hidden py-10 mt-12 bg-white rounded-3xl shadow-inner p-6">
+        <h2 class="text-2xl font-bold text-center mb-8">Hasil Perbandingan</h2>
+        <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div class="bg-slate-50 p-6 rounded-2xl shadow-sm border border-lightBorder">
+            <h3 class="font-semibold text-center mb-4">Gambar Asli</h3>
+            <div class="bg-gray-100 rounded-xl min-h-[300px] flex items-center justify-center">
+              <img id="originalImg" class="max-w-full max-h-[400px] object-contain" alt="Asli" />
+            </div>
+          </div>
+          <div class="bg-slate-50 p-6 rounded-2xl shadow-sm border border-lightBorder">
+            <h3 class="font-semibold text-center mb-4">Tanpa Latar Belakang</h3>
+            <div class="bg-checker rounded-xl min-h-[300px] flex items-center justify-center">
+              <img id="resultImg" class="max-w-full max-h-[400px] object-contain" alt="Hasil" />
+            </div>
+            <div class="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+              <button id="downloadBtn" class="bg-secondary text-white px-8 py-3 rounded-lg flex items-center gap-2 btn-hover">
+                <i class="fa fa-download"></i> Unduh PNG
+              </button>
+              <button id="resetBtn" class="border border-lightBorder px-8 py-3 rounded-lg hover:bg-slate-100 transition-colors">Unggah Lagi</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- Halaman Beli Kredit (DITAMBAH kolom masukkan kode di sini) -->
+    <section id="pageKredit" class="page-content max-w-3xl mx-auto">
+      <h2 class="text-3xl font-bold mb-6 text-center">Beli Kredit Tambahan</h2>
+      <div class="bg-white p-8 rounded-2xl shadow-sm border border-lightBorder">
+        
+        <!-- ✅ BAGIAN MASUKKAN KODE KREDIT -->
+        <div class="mb-8 p-5 bg-blue-50 rounded-xl border border-blue-100">
+          <h3 class="text-lg font-semibold mb-3 text-primary flex items-center">
+            <i class="fa fa-key mr-2"></i> Punya Kode Kredit?
+          </h3>
+          <p class="text-sm text-gray-600 mb-3">Masukkan kode yang Anda terima dari admin untuk menambah kredit secara instan</p>
+          <div class="flex gap-2">
+            <input 
+              type="text" 
+              id="kodeInput" 
+              placeholder="Masukkan kode di sini..." 
+              class="flex-1 px-4 py-2 border border-lightBorder rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+            <button 
+              onclick="prosesKodePengguna()" 
+              class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Gunakan
+            </button>
+          </div>
+        </div>
+
+        <h3 class="text-xl font-semibold mb-4">Atau Pilih Paket Pembelian</h3>
+        <div class="grid sm:grid-cols-3 gap-4 mb-8">
+          <div class="border rounded-xl p-5 text-center hover:border-primary cursor-pointer paket" data-kredit="10" data-harga="10000">
+            <h4 class="text-xl font-bold">10 Kredit</h4>
+            <p class="text-primary text-lg">Rp 10.000</p>
+          </div>
+          <div class="border rounded-xl p-5 text-center hover:border-primary cursor-pointer paket bg-blue-50 border-primary" data-kredit="50" data-harga="40000">
+            <h4 class="text-xl font-bold">50 Kredit</h4>
+            <p class="text-primary text-lg">Rp 40.000</p>
+            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Hemat 20%</span>
+          </div>
+          <div class="border rounded-xl p-5 text-center hover:border-primary cursor-pointer paket" data-kredit="100" data-harga="75000">
+            <h4 class="text-xl font-bold">100 Kredit</h4>
+            <p class="text-primary text-lg">Rp 75.000</p>
+            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Hemat 25%</span>
+          </div>
+        </div>
+
+        <div id="formPembayaran" class="border-t pt-6">
+          <h4 class="font-semibold mb-4">Informasi Pembayaran</h4>
+          <p class="mb-4">Transfer ke rekening berikut:</p>
+          <div class="bg-gray-50 p-4 rounded-lg mb-4">
+            <p><strong>Bank Rakyat Indonesia ( BRI )</strong></p>
+            <p>No. Rekening: <span class="font-mono">021601065472500</span></p>
+            <p>Atas Nama: <strong>Farid Aris</strong></p>
+          </div>
+          <p class="mb-4">Atau via E-Wallet:</p>
+          <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <p><strong>OVO</strong></p>
+            <p>No: <span class="font-mono">085825444030</span></p>
+            <p>Atas Nama: <strong>Farid Aris</strong></p>
+          </div>
+
+          <form id="formBukti">
+            <div class="mb-4">
+              <label class="block mb-2 font-medium">Email / No. HP</label>
+              <input type="text" id="kontak" required class="w-full p-3 border rounded-lg" placeholder="Contoh: 0812xxxxxxx" />
+            </div>
+            <div class="mb-4">
+              <label class="block mb-2 font-medium">Jumlah Kredit Dibeli</label>
+              <input type="text" id="jumlahKredit" readonly class="w-full p-3 border rounded-lg bg-gray-100" />
+            </div>
+            <div class="mb-6">
+              <label class="block mb-2 font-medium">Unggah Bukti Pembayaran</label>
+              <input type="file" id="buktiFile" accept="image/*" required class="w-full p-2 border rounded-lg" />
+              <p class="text-xs text-gray-500 mt-1">Format: JPG/PNG, maks 2MB</p>
+            </div>
+            <button type="submit" class="w-full bg-primary text-white py-3 rounded-lg btn-hover">Kirim Bukti Pembayaran</button>
+          </form>
+
+          <div id="pesanTerima" class="hidden mt-6 p-4 bg-green-50 rounded-lg text-center">
+            <i class="fa fa-check-circle text-green-500 text-3xl mb-2"></i>
+            <p class="font-medium">Bukti pembayaran terkirim!</p>
+            <p class="text-sm text-gray-600">Kode kredit akan dikirim ke kontak Anda dalam 1x24 jam kerja.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Halaman Cara Kerja -->
+    <section id="pageCaraKerja" class="page-content max-w-3xl mx-auto">
+      <h2 class="text-3xl font-bold mb-6 text-center">Cara Kerja</h2>
+      <div class="bg-white p-8 rounded-2xl shadow-sm border border-lightBorder">
+        <div class="space-y-8">
+          <div class="flex gap-4 items-start">
+            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xl flex-shrink-0">1</div>
+            <div>
+              <h3 class="text-xl font-semibold mb-2">Dapat Kredit Gratis</h3>
+              <p class="text-grayText leading-relaxed">Pengguna baru otomatis mendapatkan 2 kredit percobaan untuk mencoba layanan.</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-start">
+            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xl flex-shrink-0">2</div>
+            <div>
+              <h3 class="text-xl font-semibold mb-2">Proses Gambar</h3>
+              <p class="text-grayText leading-relaxed">Setiap kali Anda memproses gambar, 1 kredit akan terpotong secara otomatis.</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-start">
+            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xl flex-shrink-0">3</div>
+            <div>
+              <h3 class="text-xl font-semibold mb-2">Beli & Aktifkan Kredit</h3>
+              <p class="text-grayText leading-relaxed">Pilih paket, bayar, dapatkan kode, lalu masukkan kode di halaman Beli Kredit untuk menambah saldo.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Halaman Kebijakan -->
+    <section id="pageKebijakan" class="page-content max-w-3xl mx-auto">
+      <h2 class="text-3xl font-bold mb-6 text-center">Kebijakan Privasi & Penggunaan</h2>
+      <div class="bg-white p-8 rounded-2xl shadow-sm border border-lightBorder prose max-w-none text-grayText">
+        <h3 class="text-xl font-semibold mb-3 text-dark">1. Penggunaan Layanan</h3>
+        <p class="mb-4">Layanan ini disediakan untuk keperluan pribadi dan non-komersial. Pengguna bertanggung jawab penuh atas hak cipta gambar yang diunggah.</p>
+
+        <h3 class="text-xl font-semibold mb-3 text-dark">2. Sistem Kredit</h3>
+        <p class="mb-4">Kredit yang dibeli tidak dapat diuangkan dan berlaku selamanya. Kode kredit hanya dapat digunakan satu kali per pengguna.</p>
+
+        <h3 class="text-xl font-semibold mb-3 text-dark">3. Privasi Data</h3>
+        <p class="mb-4">Gambar yang diunggah akan diproses secara aman dan dihapus otomatis dari server dalam waktu 24 jam. Kami tidak menyimpan data pribadi pengguna secara permanen.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-dark text-gray-400 py-8 mt-12 text-center">
+    <p>&copy; 2026 HapusBG | Menggunakan teknologi remove.bg</p>
+    <p class="text-xs mt-2">Pengguna baru: 2 kredit gratis</p>
+  </footer>
+
+  <script>
+    // ==============================================
+    // KONFIGURASI UTAMA
+    // ==============================================
+    const REMOVE_BG_API_KEY = "xLxAFPN7nCvxymur72LpRmT2"; // Ganti API Key Anda
+    const WA_ADMIN = "6285825444030"; // Ganti nomor WA Anda
+
+    // ==============================================
+    // SISTEM KREDIT
+    // ==============================================
+    let kredit = parseInt(localStorage.getItem('hapusbg_kredit')) || 2;
+    const infoKredit = document.getElementById('infoKredit');
+
+    function updateKredit() {
+      infoKredit.textContent = `Kredit: ${kredit}`;
+      localStorage.setItem('hapusbg_kredit', kredit);
+      
+      if (kredit <= 0) {
+        document.getElementById('uploadContent').classList.add('hidden');
+        document.getElementById('kreditHabis').classList.remove('hidden');
+      } else {
+        document.getElementById('uploadContent').classList.remove('hidden');
+        document.getElementById('kreditHabis').classList.add('hidden');
+      }
+    }
+    updateKredit();
+
+    // ==============================================
+    // NAVIGASI & MENU
+    // ==============================================
+    const openSidebar = document.getElementById('openSidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    const menuBeranda = document.getElementById('menuBeranda');
+    const menuKredit = document.getElementById('menuKredit');
+    const menuCaraKerja = document.getElementById('menuCaraKerja');
+    const menuTentang = document.getElementById('menuTentang');
+    const menuKebijakan = document.getElementById('menuKebijakan');
+
+    const navBeranda = document.getElementById('navBeranda');
+    const navKredit = document.getElementById('navKredit');
+
+    const pageBeranda = document.getElementById('pageBeranda');
+    const pageKredit = document.getElementById('pageKredit');
+    const pageCaraKerja = document.getElementById('pageCaraKerja');
+    const pageKebijakan = document.getElementById('pageKebijakan');
+
+    const aboutModal = document.getElementById('aboutModal');
+    const closeAbout = document.getElementById('closeAbout');
+
+    function gantiHalaman(halaman) {
+      document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+      halaman.classList.add('active');
+      window.scrollTo({top:0, behavior:'smooth'});
+      toggleSidebar();
+    }
+
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('hidden');
+      document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
+    }
+
+    openSidebar.addEventListener('click', toggleSidebar);
+    closeSidebar.addEventListener('click', toggleSidebar);
+    overlay.addEventListener('click', () => {
+      if(sidebar.classList.contains('open')) toggleSidebar();
+      if(aboutModal.classList.contains('open')) closeAboutModal();
+    });
+
+    function openAboutModal() {
+      aboutModal.classList.add('open');
+      overlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      toggleSidebar();
+    }
+    function closeAboutModal() {
+      aboutModal.classList.remove('open');
+      overlay.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+
+    menuBeranda.addEventListener('click', () => gantiHalaman(pageBeranda));
+    menuKredit.addEventListener('click', () => gantiHalaman(pageKredit));
+    menuCaraKerja.addEventListener('click', () => gantiHalaman(pageCaraKerja));
+    menuTentang.addEventListener('click', openAboutModal);
+    menuKebijakan.addEventListener('click', () => gantiHalaman(pageKebijakan));
+
+    navBeranda.addEventListener('click', () => gantiHalaman(pageBeranda));
+    navKredit.addEventListener('click', () => gantiHalaman(pageKredit));
+    closeAbout.addEventListener('click', closeAboutModal);
+
+    // ==============================================
+    // SISTEM KODE PENGGUNA
+    // ==============================================
+    function prosesKodePengguna() {
+      const kode = document.getElementById('kodeInput').value.trim();
+      validasiDanTambahKredit(kode);
+      document.getElementById('kodeInput').value = '';
+    }
+
+    function validasiDanTambahKredit(kode) {
+      if (!kode) return alert('❌ Masukkan kode terlebih dahulu!');
+
+      const kodeTerpakai = JSON.parse(localStorage.getItem('kode_terpakai') || '[]');
+      if (kodeTerpakai.includes(kode)) return alert('❌ Kode ini sudah pernah digunakan!');
+
+      try {
+        const data = atob(kode).split('|');
+        if (data[0] !== 'TAMBAH_KREDIT' || data.length !== 3) throw new Error('Format salah');
+
+        const jumlah = parseInt(data[1]);
+        const kadaluarsa = parseInt(data[2]);
+
+        if (Date.now() > kadaluarsa) return alert('❌ Kode sudah kadaluarsa!');
+
+        kredit += jumlah;
+        updateKredit();
+
+        kodeTerpakai.push(kode);
+        localStorage.setItem('kode_terpakai', JSON.stringify(kodeTerpakai));
+
+        alert(`✅ Berhasil! ${jumlah} kredit ditambahkan.\nTotal: ${kredit} kredit`);
+
+      } catch (e) {
+        alert('❌ Kode tidak valid! Pastikan disalin dengan benar.');
+      }
+    }
+
+    // ==============================================
+    // PAKET & PEMBAYARAN
+    // ==============================================
+    const paketButtons = document.querySelectorAll('.paket');
+    const jumlahKreditInput = document.getElementById('jumlahKredit');
+
+    paketButtons.forEach(paket => {
+      paket.addEventListener('click', () => {
+        paketButtons.forEach(p => p.classList.remove('border-primary', 'bg-blue-50'));
+        paket.classList.add('border-primary', 'bg-blue-50');
+        jumlahKreditInput.value = `${paket.dataset.kredit} Kredit - Rp ${parseInt(paket.dataset.harga).toLocaleString('id-ID')}`;
+      });
+    });
+
+    document.getElementById('formBukti').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const kontak = document.getElementById('kontak').value;
+      const paket = document.getElementById('jumlahKredit').value;
+      
+      const teksWA = `Halo Admin, saya mau beli kredit%0A%0AKontak: ${kontak}%0APaket: ${paket}%0A%0ABukti pembayaran saya kirim di sini.`;
+      window.open(`https://wa.me/${WA_ADMIN}?text=${teksWA}`, '_blank');
+      
+      document.getElementById('formBukti').classList.add('hidden');
+      document.getElementById('pesanTerima').classList.remove('hidden');
+    });
+
+    // ==============================================
+    // PROSES GAMBAR
+    // ==============================================
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadContent = document.getElementById('uploadContent');
+    const loadingContent = document.getElementById('loadingContent');
+    const errorBox = document.getElementById('errorBox');
+    const resultSection = document.getElementById('resultSection');
+    const originalImg = document.getElementById('originalImg');
+    const resultImg = document.getElementById('resultImg');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => {e.preventDefault(); dropZone.classList.add('dragover')});
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {e.preventDefault(); dropZone.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) prosesGambar(f)});
+    fileInput.addEventListener('change', e => e.target.files[0] && prosesGambar(e.target.files[0]));
+
+    async function prosesGambar(file) {
+      if (kredit <= 0) {
+        tampilError('Kredit habis! Silakan beli dulu.');
+        return;
+      }
+      errorBox.classList.add('hidden');
+      if(file.size > 12*1024*1024) return tampilError('File maksimal 12MB!');
+
+      uploadContent.classList.add('hidden');
+      loadingContent.classList.remove('hidden');
+      resultSection.classList.add('hidden');
+
+      try {
+        originalImg.src = URL.createObjectURL(file);
+        const formData = new FormData();
+        formData.append('image_file', file);
+        formData.append('size', 'auto');
+
+        const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+          method: 'POST',
+          headers: {'X-Api-Key': REMOVE_BG_API_KEY},
+          body: formData
+        });
+
+        if(!res.ok) throw new Error(res.status === 402 ? 'Kuota API habis' : 'Gagal memproses');
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        resultImg.src = url;
+
+        kredit--;
+        updateKredit();
+
+        downloadBtn.onclick = () => {const a=document.createElement('a'); a.href=url; a.download='tanpa-latar.png'; a.click()};
+        resultSection.classList.remove('hidden');
+
+      } catch(e) {
+        tampilError('Gagal: ' + e.message);
+      } finally {
+        uploadContent.classList.remove('hidden');
+        loadingContent.classList.add('hidden');
+      }
+    }
+
+    function tampilError(pesan) {
+      errorBox.textContent = pesan;
+      errorBox.classList.remove('hidden');
+    }
+
+    resetBtn.addEventListener('click', () => {fileInput.value=''; resultSection.classList.add('hidden'); window.scrollTo({top:0})});
+  </script>
+</body>
+</html>
